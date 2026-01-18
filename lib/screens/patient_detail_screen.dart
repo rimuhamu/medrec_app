@@ -126,15 +126,29 @@ class _MedicationsTab extends StatelessWidget {
                           ],
                         ),
                         isThreeLine: true,
-                        trailing: isAdmin
-                            ? IconButton(
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              DateFormat('MMM d, y').format(med.createdAt),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            if (isAdmin)
+                              IconButton(
                                 icon: const Icon(Icons.delete),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                                 onPressed: () => _deleteMedication(
                                   context,
                                   med.id,
                                 ),
-                              )
-                            : null,
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   },
