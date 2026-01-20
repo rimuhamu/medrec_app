@@ -126,9 +126,8 @@ class _MedicationsTab extends StatelessWidget {
                           ],
                         ),
                         isThreeLine: true,
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               DateFormat('MMM d, y').format(med.createdAt),
@@ -139,8 +138,8 @@ class _MedicationsTab extends StatelessWidget {
                             ),
                             if (isAdmin)
                               IconButton(
-                                icon: const Icon(Icons.delete),
-                                padding: EdgeInsets.zero,
+                                icon: const Icon(Icons.delete, size: 20),
+                                padding: const EdgeInsets.only(left: 8),
                                 constraints: const BoxConstraints(),
                                 onPressed: () => _deleteMedication(
                                   context,
