@@ -162,6 +162,19 @@ class ApiService {
     }
   }
 
+  Future<MedicalHistory> updateMedicalHistory(
+      int patientId, int historyId, Map<String, dynamic> data) async {
+    try {
+      final res = await _dio.patch(
+        '/patients/$patientId/medical-history/$historyId',
+        data: data,
+      );
+      return MedicalHistory.fromJson(res.data);
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
   // Diagnostic Test Results
   Future<List<DiagnosticTestResult>> getDiagnosticTests(int patientId) async {
     try {

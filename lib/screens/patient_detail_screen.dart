@@ -301,6 +301,16 @@ class _MedicalHistoryTab extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            if (isAdmin)
+                              Align(
+                                alignment: Alignment.topRight,
+                                child: IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () =>
+                                      _showEditHistoryDialog(context, history),
+                                  tooltip: 'Edit Medical History',
+                                ),
+                              ),
                             _buildInfoRow('Conditions',
                                 history.medicalConditions ?? 'N/A'),
                             const SizedBox(height: 12),
@@ -409,6 +419,86 @@ class _MedicalHistoryTab extends StatelessWidget {
               }
             },
             child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditHistoryDialog(BuildContext context, dynamic history) {
+    final conditionsController =
+        TextEditingController(text: history.medicalConditions ?? '');
+    final allergiesController =
+        TextEditingController(text: history.allergies?.join(', ') ?? '');
+    final surgeriesController =
+        TextEditingController(text: history.surgeries ?? '');
+    final treatmentsController =
+        TextEditingController(text: history.treatments ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Medical History'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: conditionsController,
+                decoration:
+                    const InputDecoration(labelText: 'Medical Conditions'),
+              ),
+              TextField(
+                controller: allergiesController,
+                decoration: const InputDecoration(
+                    labelText: 'Allergies (comma-separated)'),
+              ),
+              TextField(
+                controller: surgeriesController,
+                decoration: const InputDecoration(labelText: 'Surgeries'),
+              ),
+              TextField(
+                controller: treatmentsController,
+                decoration: const InputDecoration(labelText: 'Treatments'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final provider = context.read<PatientProvider>();
+              final allergies = allergiesController.text
+                  .split(',')
+                  .map((e) => e.trim())
+                  .where((e) => e.isNotEmpty)
+                  .toList();
+
+              final success =
+                  await provider.updateMedicalHistory(patientId, history.id, {
+                'medicalConditions': conditionsController.text,
+                'allergies': allergies,
+                'surgeries': surgeriesController.text,
+                'treatments': treatmentsController.text,
+              });
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success
+                        ? 'Medical history updated'
+                        : 'Failed to update medical history'),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            },
+            child: const Text('Save'),
           ),
         ],
       ),

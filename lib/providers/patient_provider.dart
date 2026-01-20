@@ -103,6 +103,24 @@ class PatientProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updateMedicalHistory(
+      int patientId, int historyId, Map<String, dynamic> data) async {
+    try {
+      final updated =
+          await _apiService.updateMedicalHistory(patientId, historyId, data);
+      final index = _medicalHistory.indexWhere((h) => h.id == historyId);
+      if (index != -1) {
+        _medicalHistory[index] = updated;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> addDiagnosticTest(
       int patientId, Map<String, dynamic> data) async {
     try {
