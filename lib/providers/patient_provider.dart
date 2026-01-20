@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 
 class PatientProvider extends ChangeNotifier {
   final ApiService _apiService;
+  final _notificationService = NotificationService();
 
   List<Patient> _patients = [];
   List<Medication> _medications = [];
@@ -29,6 +31,14 @@ class PatientProvider extends ChangeNotifier {
 
     try {
       _patients = await _apiService.getPatients();
+
+      // Schedule notifications for upcoming appointments
+      for (final patient in _patients) {
+        if (patient.nextAppointment != null) {
+          await _scheduleAppointmentNotification(patient);
+        }
+      }
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -60,6 +70,19 @@ class PatientProvider extends ChangeNotifier {
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> _scheduleAppointmentNotification(Patient patient) async {
+    try {
+      final appointmentDate = DateTime.parse(patient.nextAppointment!);
+      await _notificationService.scheduleAppointmentNotification(
+        id: patient.id,
+        patientName: patient.name,
+        appointmentDate: appointmentDate,
+      );
+    } catch (e) {
+      debugPrint('Error scheduling notification: $e');
     }
   }
 

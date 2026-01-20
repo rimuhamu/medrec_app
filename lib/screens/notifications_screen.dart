@@ -178,19 +178,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       : ListView.builder(
                           padding: const EdgeInsets.all(16),
                           itemCount: _pendingNotifications.length,
-                          itemBuilder: (context, index) {
+                          itemBuilder: (itemContext, index) {
                             final notification = _pendingNotifications[index];
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: Theme.of(context)
+                                  backgroundColor: Theme.of(itemContext)
                                       .colorScheme
                                       .primaryContainer,
                                   child: Icon(
                                     Icons.notifications,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
+                                    color: Theme.of(itemContext)
+                                        .colorScheme
+                                        .primary,
                                   ),
                                 ),
                                 title: Text(
