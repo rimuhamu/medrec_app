@@ -104,6 +104,24 @@ class ApiService {
     }
   }
 
+  Future<Patient> createPatient(Map<String, dynamic> data) async {
+    try {
+      final res = await _dio.post('/patients', data: data);
+      return Patient.fromJson(res.data);
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
+  Future<Patient> updatePatient(int id, Map<String, dynamic> data) async {
+    try {
+      final res = await _dio.patch('/patients/$id', data: data);
+      return Patient.fromJson(res.data);
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
   // Medications
   Future<List<Medication>> getMedications(int patientId) async {
     try {
