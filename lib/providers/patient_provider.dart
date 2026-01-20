@@ -86,6 +86,29 @@ class PatientProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> updatePatientAppointment(
+      int patientId, String appointmentDate) async {
+    try {
+      final updatedPatient = await _apiService
+          .updatePatient(patientId, {'nextAppointment': appointmentDate});
+
+      final index = _patients.indexWhere((p) => p.id == patientId);
+      if (index != -1) {
+        _patients[index] = updatedPatient;
+      }
+
+      if (updatedPatient.nextAppointment != null) {
+        await _scheduleAppointmentNotification(updatedPatient);
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> addMedication(int patientId, Map<String, dynamic> data) async {
     try {
       final med = await _apiService.createMedication(patientId, data);
