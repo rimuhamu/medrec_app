@@ -5,6 +5,7 @@ import '../screens/register_screen.dart';
 import '../screens/home_screen.dart';
 import '../screens/patient_list_screen.dart';
 import '../screens/patient_detail_screen.dart';
+import '../screens/notifications_screen.dart';
 
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
@@ -48,6 +49,10 @@ class AppRouter {
             final id = int.parse(state.pathParameters['id']!);
             return PatientDetailScreen(patientId: id);
           },
+        ),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationsScreen(),
         ),
       ],
     );
