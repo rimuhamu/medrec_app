@@ -5,8 +5,14 @@ import 'providers/auth_provider.dart';
 import 'providers/patient_provider.dart';
 import 'routes/app_router.dart';
 import 'services/api_service.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize notification service
+  await NotificationService().initialize();
+
   runApp(const MedRecApp());
 }
 
