@@ -271,6 +271,7 @@ class _MedicalHistoryTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PatientProvider>();
+    final theme = Theme.of(context);
 
     return Column(
       children: [
@@ -288,41 +289,127 @@ class _MedicalHistoryTab extends StatelessWidget {
           ),
         Expanded(
           child: provider.medicalHistory.isEmpty
-              ? const Center(child: Text('No medical history'))
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.history_outlined,
+                        size: 64,
+                        color: Colors.grey[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No medical history',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Medical records will appear here',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: provider.medicalHistory.length,
                   itemBuilder: (context, index) {
                     final history = provider.medicalHistory[index];
                     return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (isAdmin)
-                              Align(
-                                alignment: Alignment.topRight,
-                                child: IconButton(
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () =>
-                                      _showEditHistoryDialog(context, history),
-                                  tooltip: 'Edit Medical History',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header with edit button
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer
+                                  .withValues(alpha: 0.3),
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(12)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.medical_information,
+                                  color: theme.colorScheme.primary,
                                 ),
-                              ),
-                            _buildInfoRow('Conditions',
-                                history.medicalConditions ?? 'N/A'),
-                            const SizedBox(height: 12),
-                            _buildInfoRow('Allergies',
-                                history.allergies?.join(', ') ?? 'None'),
-                            const SizedBox(height: 12),
-                            _buildInfoRow(
-                                'Surgeries', history.surgeries ?? 'None'),
-                            const SizedBox(height: 12),
-                            _buildInfoRow(
-                                'Treatments', history.treatments ?? 'N/A'),
-                          ],
-                        ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Medical History',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        'Last updated: ${DateFormat('MMM d, y').format(history.updatedAt)}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (isAdmin)
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined),
+                                    onPressed: () => _showEditHistoryDialog(
+                                        context, history),
+                                    tooltip: 'Edit Medical History',
+                                  ),
+                              ],
+                            ),
+                          ),
+                          // Content sections
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSection(
+                                  icon: Icons.medical_services,
+                                  iconColor: Colors.blue,
+                                  label: 'Medical Conditions',
+                                  value: history.medicalConditions ??
+                                      'None recorded',
+                                ),
+                                const SizedBox(height: 16),
+                                _buildAllergySection(
+                                  allergies: history.allergies,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSection(
+                                  icon: Icons.local_hospital,
+                                  iconColor: Colors.red,
+                                  label: 'Surgeries',
+                                  value: history.surgeries ?? 'None recorded',
+                                ),
+                                const SizedBox(height: 16),
+                                _buildSection(
+                                  icon: Icons.healing,
+                                  iconColor: Colors.green,
+                                  label: 'Treatments',
+                                  value: history.treatments ?? 'None recorded',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -332,19 +419,110 @@ class _MedicalHistoryTab extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Column(
+  Widget _buildSection({
+    required IconData icon,
+    required Color iconColor,
+    required String label,
+    required String value,
+  }) {
+    return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 20, color: iconColor),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 15),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 4),
-        Text(value),
+      ],
+    );
+  }
+
+  Widget _buildAllergySection({List<String>? allergies}) {
+    final hasAllergies = allergies != null && allergies.isNotEmpty;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.orange.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.warning_amber_rounded,
+              size: 20, color: Colors.orange),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Allergies',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 8),
+              hasAllergies
+                  ? Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: allergies.map((allergy) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.orange.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Text(
+                            allergy,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    )
+                  : const Text(
+                      'No known allergies',
+                      style: TextStyle(fontSize: 15),
+                    ),
+            ],
+          ),
+        ),
       ],
     );
   }
