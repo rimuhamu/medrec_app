@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
 import '../models/models.dart';
 
 class ApiService {
@@ -15,6 +16,17 @@ class ApiService {
         responseType: ResponseType.json,
       ),
     );
+
+    if (kDebugMode) {
+      _dio.interceptors.add(LogInterceptor(
+        request: true,
+        requestHeader: true,
+        requestBody: true,
+        responseHeader: true,
+        responseBody: true,
+        error: true,
+      ));
+    }
 
     _dio.interceptors.add(
       InterceptorsWrapper(
@@ -115,9 +127,18 @@ class ApiService {
 
   Future<Patient> updatePatient(int id, Map<String, dynamic> data) async {
     try {
-      final res = await _dio.patch('/patients/$id', data: data);
+      debugPrint('🔄 Updating patient $id with data: $data');
+
+      final res = await _dio.patch(
+        '/patients/$id',
+        data: data,
+      );
+
+      debugPrint('✅ Patient updated successfully: ${res.data}');
       return Patient.fromJson(res.data);
     } on DioException catch (e) {
+      debugPrint(
+          '❌ Update patient error: ${e.response?.statusCode} - ${e.response?.data}');
       throw Exception(_handleError(e));
     }
   }
