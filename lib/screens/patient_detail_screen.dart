@@ -434,73 +434,167 @@ class _MedicalHistoryTab extends StatelessWidget {
     final treatmentsController =
         TextEditingController(text: history.treatments ?? '');
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Medical History'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: conditionsController,
-                decoration:
-                    const InputDecoration(labelText: 'Medical Conditions'),
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
               ),
-              TextField(
-                controller: allergiesController,
-                decoration: const InputDecoration(
-                    labelText: 'Allergies (comma-separated)'),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  const Text(
+                    'Edit Medical History',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      final provider = context.read<PatientProvider>();
+                      final allergies = allergiesController.text
+                          .split(',')
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList();
+
+                      final success = await provider
+                          .updateMedicalHistory(patientId, history.id, {
+                        'medicalConditions': conditionsController.text,
+                        'allergies': allergies,
+                        'surgeries': surgeriesController.text,
+                        'treatments': treatmentsController.text,
+                      });
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(success
+                                ? 'Medical history updated'
+                                : 'Failed to update medical history'),
+                            backgroundColor:
+                                success ? Colors.green : Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
               ),
-              TextField(
-                controller: surgeriesController,
-                decoration: const InputDecoration(labelText: 'Surgeries'),
+            ),
+            const Divider(),
+            // Form content
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(20),
+                children: [
+                  _buildFormField(
+                    controller: conditionsController,
+                    label: 'Medical Conditions',
+                    icon: Icons.medical_information,
+                    hint: 'e.g., Type 2 Diabetes, Hypertension',
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: allergiesController,
+                    label: 'Allergies',
+                    icon: Icons.warning_amber_rounded,
+                    hint: 'Separate multiple allergies with commas',
+                    helperText: 'e.g., Penicillin, Shellfish, Peanuts',
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: surgeriesController,
+                    label: 'Surgeries',
+                    icon: Icons.local_hospital,
+                    hint: 'Previous surgical procedures',
+                    helperText: 'Include dates if known',
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: treatmentsController,
+                    label: 'Treatments',
+                    icon: Icons.healing,
+                    hint: 'Current or ongoing treatments',
+                    maxLines: 3,
+                  ),
+                ],
               ),
-              TextField(
-                controller: treatmentsController,
-                decoration: const InputDecoration(labelText: 'Treatments'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    String? hint,
+    String? helperText,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 20, color: Colors.teal),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
-            ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hint,
+            helperText: helperText,
+            helperMaxLines: 2,
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final provider = context.read<PatientProvider>();
-              final allergies = allergiesController.text
-                  .split(',')
-                  .map((e) => e.trim())
-                  .where((e) => e.isNotEmpty)
-                  .toList();
-
-              final success =
-                  await provider.updateMedicalHistory(patientId, history.id, {
-                'medicalConditions': conditionsController.text,
-                'allergies': allergies,
-                'surgeries': surgeriesController.text,
-                'treatments': treatmentsController.text,
-              });
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success
-                        ? 'Medical history updated'
-                        : 'Failed to update medical history'),
-                    backgroundColor: success ? Colors.green : Colors.red,
-                  ),
-                );
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }
