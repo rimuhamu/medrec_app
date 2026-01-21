@@ -12,6 +12,10 @@ class PatientListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
         title: const Text('All Patients'),
       ),
       body: Consumer<PatientProvider>(
