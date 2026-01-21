@@ -123,10 +123,41 @@ class PatientProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> deletePatient(int patientId) async {
+    try {
+      await _apiService.deletePatient(patientId);
+      _patients.removeWhere((p) => p.id == patientId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> addMedication(int patientId, Map<String, dynamic> data) async {
     try {
       final med = await _apiService.createMedication(patientId, data);
       _medications.add(med);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateMedication(
+      int patientId, int medicationId, Map<String, dynamic> data) async {
+    try {
+      final updated =
+          await _apiService.updateMedication(patientId, medicationId, data);
+      final index = _medications.indexWhere((m) => m.id == medicationId);
+      if (index != -1) {
+        _medications[index] = updated;
+      }
       notifyListeners();
       return true;
     } catch (e) {
@@ -181,11 +212,55 @@ class PatientProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteMedicalHistory(int patientId, int historyId) async {
+    try {
+      await _apiService.deleteMedicalHistory(patientId, historyId);
+      _medicalHistory.removeWhere((h) => h.id == historyId);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> addDiagnosticTest(
       int patientId, Map<String, dynamic> data) async {
     try {
       final test = await _apiService.createDiagnosticTest(patientId, data);
       _diagnosticTests.add(test);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateDiagnosticTest(
+      int patientId, int testId, Map<String, dynamic> data) async {
+    try {
+      final updated =
+          await _apiService.updateDiagnosticTest(patientId, testId, data);
+      final index = _diagnosticTests.indexWhere((t) => t.id == testId);
+      if (index != -1) {
+        _diagnosticTests[index] = updated;
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteDiagnosticTest(int patientId, int testId) async {
+    try {
+      await _apiService.deleteDiagnosticTest(patientId, testId);
+      _diagnosticTests.removeWhere((t) => t.id == testId);
       notifyListeners();
       return true;
     } catch (e) {
