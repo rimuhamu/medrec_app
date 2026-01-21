@@ -516,13 +516,14 @@ class _MedicalHistoryTab extends StatelessWidget {
                                         context, history),
                                     tooltip: 'Edit Medical History',
                                   ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.red),
-                                  onPressed: () => _deleteMedicalHistory(
-                                      context, history.id),
-                                  tooltip: 'Delete Medical History',
-                                ),
+                                if (isAdmin)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () => _deleteMedicalHistory(
+                                        context, history.id),
+                                    tooltip: 'Delete Medical History',
+                                  ),
                               ],
                             ),
                           ),
@@ -1089,14 +1090,15 @@ class _DiagnosticTestsTab extends StatelessWidget {
                                     onPressed: () =>
                                         _showEditTestDialog(context, test),
                                   ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete,
-                                      size: 20, color: Colors.red),
-                                  padding: const EdgeInsets.only(left: 8),
-                                  constraints: const BoxConstraints(),
-                                  onPressed: () =>
-                                      _deleteDiagnosticTest(context, test.id),
-                                ),
+                                if (isAdmin)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        size: 20, color: Colors.red),
+                                    padding: const EdgeInsets.only(left: 8),
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () =>
+                                        _deleteDiagnosticTest(context, test.id),
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 12),
