@@ -52,7 +52,11 @@ class AppRouter {
           path: '/patients/:id',
           builder: (context, state) {
             final id = int.parse(state.pathParameters['id']!);
-            return PatientDetailScreen(patientId: id);
+            final tab = state.uri.queryParameters['tab'];
+            return PatientDetailScreen(
+              patientId: id,
+              initialTabIndex: tab != null ? int.tryParse(tab) : 0,
+            );
           },
         ),
         GoRoute(

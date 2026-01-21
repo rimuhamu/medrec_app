@@ -7,8 +7,13 @@ import '../providers/auth_provider.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final int patientId;
+  final int? initialTabIndex;
 
-  const PatientDetailScreen({super.key, required this.patientId});
+  const PatientDetailScreen({
+    super.key,
+    required this.patientId,
+    this.initialTabIndex,
+  });
 
   @override
   State<PatientDetailScreen> createState() => _PatientDetailScreenState();
@@ -21,7 +26,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex ?? 0,
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PatientProvider>().loadPatientData(widget.patientId);
     });

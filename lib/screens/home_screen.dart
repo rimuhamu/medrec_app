@@ -206,6 +206,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 provider.medications.length.toString(),
                 Icons.medication,
                 Colors.green,
+                onTap: () => context.push(
+                    '/patients/${auth.user!.patientId}?tab=0'), // Tab 0: Medications
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatsCard(
+                'History',
+                provider.medicalHistory.length.toString(),
+                Icons.history,
+                Colors.blue,
+                onTap: () => context.push(
+                    '/patients/${auth.user!.patientId}?tab=1'), // Tab 1: History
               ),
             ),
             const SizedBox(width: 12),
@@ -215,6 +228,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 provider.diagnosticTests.length.toString(),
                 Icons.science,
                 Colors.orange,
+                onTap: () => context.push(
+                    '/patients/${auth.user!.patientId}?tab=2'), // Tab 2: Tests
               ),
             ),
           ],
@@ -324,28 +339,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStatsCard(
-      String title, String value, IconData icon, Color color) {
+  Widget _buildStatsCard(String title, String value, IconData icon, Color color,
+      {VoidCallback? onTap}) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-            ),
-            Text(
-              title,
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+              ),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
