@@ -146,6 +146,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
         ),
         const SizedBox(height: 16),
+        _buildStatsCard(
+          'Total Patients',
+          provider.patients.length.toString(),
+          Icons.people,
+          Colors.blue,
+          onTap: () => context.push('/patients'),
+        ),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -170,13 +178,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ],
-        ),
-        const SizedBox(height: 24),
-        _buildStatsCard(
-          'Total Patients',
-          provider.patients.length.toString(),
-          Icons.people,
-          Colors.blue,
         ),
       ],
     );
@@ -206,8 +207,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 provider.medications.length.toString(),
                 Icons.medication,
                 Colors.green,
-                onTap: () => context.push(
-                    '/patients/${auth.user!.patientId}?tab=0'), // Tab 0: Medications
+                onTap: () =>
+                    context.push('/patients/${auth.user!.patientId}?tab=0'),
               ),
             ),
             const SizedBox(width: 12),
@@ -217,8 +218,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 provider.medicalHistory.length.toString(),
                 Icons.history,
                 Colors.blue,
-                onTap: () => context.push(
-                    '/patients/${auth.user!.patientId}?tab=1'), // Tab 1: History
+                onTap: () =>
+                    context.push('/patients/${auth.user!.patientId}?tab=1'),
               ),
             ),
             const SizedBox(width: 12),
@@ -228,8 +229,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 provider.diagnosticTests.length.toString(),
                 Icons.science,
                 Colors.orange,
-                onTap: () => context.push(
-                    '/patients/${auth.user!.patientId}?tab=2'), // Tab 2: Tests
+                onTap: () =>
+                    context.push('/patients/${auth.user!.patientId}?tab=2'),
               ),
             ),
           ],
