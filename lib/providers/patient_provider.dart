@@ -73,6 +73,20 @@ class PatientProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> addPatient(Map<String, dynamic> data) async {
+    _error = null;
+    try {
+      final patient = await _apiService.createPatient(data);
+      _patients.add(patient);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<void> _scheduleAppointmentNotification(Patient patient) async {
     try {
       final appointmentDate = DateTime.parse(patient.nextAppointment!);
