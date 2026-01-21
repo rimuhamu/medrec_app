@@ -103,9 +103,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => widget.isAdminMode
-              ? context.go('/patients')
-              : context.go('/login'),
+          onPressed: () =>
+              widget.isAdminMode ? context.go('/') : context.go('/login'),
         ),
         title: widget.isAdminMode ? const Text('Register New Patient') : null,
       ),
