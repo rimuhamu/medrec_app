@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../providers/patient_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final bool isAdminMode;
+
+  const RegisterScreen({super.key, this.isAdminMode = false});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -19,6 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -33,27 +37,62 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      final auth = context.read<AuthProvider>();
-      final success = await auth.register(
-        username: _usernameController.text,
-        password: _passwordController.text,
-        patientData: {
-          'name': _nameController.text,
-          'age': int.parse(_ageController.text),
-          'address': _addressController.text,
-          'phoneNumber': _phoneController.text,
-        },
-      );
+      setState(() => _isLoading = true);
 
-      if (success && mounted) {
-        context.go('/');
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(auth.error ?? 'Registration failed'),
-            backgroundColor: Colors.red,
-          ),
+      bool success;
+      String? error;
+
+      if (widget.isAdminMode) {
+        final patientProvider = context.read<PatientProvider>();
+        success = await patientProvider.registerPatientUser(
+          username: _usernameController.text,
+          password: _passwordController.text,
+          patientData: {
+            'name': _nameController.text,
+            'age': int.parse(_ageController.text),
+            'address': _addressController.text,
+            'phoneNumber': _phoneController.text,
+          },
         );
+        error = patientProvider.error;
+      } else {
+        final auth = context.read<AuthProvider>();
+        success = await auth.register(
+          username: _usernameController.text,
+          password: _passwordController.text,
+          patientData: {
+            'name': _nameController.text,
+            'age': int.parse(_ageController.text),
+            'address': _addressController.text,
+            'phoneNumber': _phoneController.text,
+          },
+        );
+        error = auth.error;
+      }
+
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        if (success) {
+          if (widget.isAdminMode) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Patient registered successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            context.go('/patients');
+          } else {
+            context.go('/');
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error ?? 'Registration failed'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -64,8 +103,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/login'),
+          onPressed: () => widget.isAdminMode
+              ? context.go('/patients')
+              : context.go('/login'),
         ),
+        title: widget.isAdminMode ? const Text('Register New Patient') : null,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -75,20 +117,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Create Account',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Register to manage your medical records',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-                const SizedBox(height: 32),
+                if (!widget.isAdminMode) ...[
+                  Text(
+                    'Create Account',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Register to manage your medical records',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
                 Text(
                   'Account Information',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -211,26 +255,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 32),
-                Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: FilledButton(
-                        onPressed: auth.isLoading ? null : _handleRegister,
-                        child: auth.isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text('Register'),
-                      ),
-                    );
-                  },
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: FilledButton(
+                    onPressed: _isLoading ? null : _handleRegister,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(widget.isAdminMode
+                            ? 'Register Patient'
+                            : 'Register'),
+                  ),
                 ),
               ],
             ),

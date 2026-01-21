@@ -6,7 +6,6 @@ import '../screens/home_screen.dart';
 import '../screens/patient_list_screen.dart';
 import '../screens/patient_detail_screen.dart';
 import '../screens/notifications_screen.dart';
-import '../screens/add_patient_screen.dart';
 
 class AppRouter {
   static GoRouter router(AuthProvider authProvider) {
@@ -46,7 +45,7 @@ class AppRouter {
         ),
         GoRoute(
           path: '/patients/add',
-          builder: (context, state) => const AddPatientScreen(),
+          builder: (context, state) => const RegisterScreen(isAdminMode: true),
         ),
         GoRoute(
           path: '/patients/:id',
