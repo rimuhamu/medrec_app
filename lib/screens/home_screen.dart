@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            onPressed: () => context.go('/notifications'),
+            onPressed: () => context.push('/notifications'),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
-            onPressed: () => context.go('/patients'),
+            onPressed: () => context.push('/patients'),
             icon: const Icon(Icons.people),
             label: const Text('View All Patients'),
           ),
@@ -205,7 +205,8 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () => context.go('/patients/${auth.user!.patientId}'),
+              onPressed: () =>
+                  context.push('/patients/${auth.user!.patientId}'),
               icon: const Icon(Icons.visibility),
               label: const Text('View Complete Records'),
             ),

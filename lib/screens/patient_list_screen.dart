@@ -50,7 +50,7 @@ class PatientListScreen extends StatelessWidget {
               final patient = provider.patients[index];
               return _PatientCard(
                 patient: patient,
-                onTap: () => context.go('/patients/${patient.id}'),
+                onTap: () => context.push('/patients/${patient.id}'),
                 onAppointment: () => _showAppointmentDialog(context, patient),
               );
             },
