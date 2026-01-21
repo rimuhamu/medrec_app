@@ -143,6 +143,14 @@ class ApiService {
     }
   }
 
+  Future<void> deletePatient(int patientId) async {
+    try {
+      await _dio.delete('/patients/$patientId');
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
   // Medications
   Future<List<Medication>> getMedications(int patientId) async {
     try {
@@ -160,6 +168,19 @@ class ApiService {
     try {
       final res = await _dio.post(
         '/patients/$patientId/medications',
+        data: data,
+      );
+      return Medication.fromJson(res.data);
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
+  Future<Medication> updateMedication(
+      int patientId, int medicationId, Map<String, dynamic> data) async {
+    try {
+      final res = await _dio.patch(
+        '/patients/$patientId/medications/$medicationId',
         data: data,
       );
       return Medication.fromJson(res.data);
@@ -201,6 +222,14 @@ class ApiService {
     }
   }
 
+  Future<void> deleteMedicalHistory(int patientId, int id) async {
+    try {
+      await _dio.delete('/patients/$patientId/medical-history/$id');
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
   Future<MedicalHistory> updateMedicalHistory(
       int patientId, int historyId, Map<String, dynamic> data) async {
     try {
@@ -235,6 +264,27 @@ class ApiService {
         data: data,
       );
       return DiagnosticTestResult.fromJson(res.data);
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
+  Future<DiagnosticTestResult> updateDiagnosticTest(
+      int patientId, int testId, Map<String, dynamic> data) async {
+    try {
+      final res = await _dio.patch(
+        '/patients/$patientId/diagnostic-test-results/$testId',
+        data: data,
+      );
+      return DiagnosticTestResult.fromJson(res.data);
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
+  Future<void> deleteDiagnosticTest(int patientId, int id) async {
+    try {
+      await _dio.delete('/patients/$patientId/diagnostic-test-results/$id');
     } on DioException catch (e) {
       throw Exception(_handleError(e));
     }
