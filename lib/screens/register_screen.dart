@@ -45,26 +45,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (widget.isAdminMode) {
         final patientProvider = context.read<PatientProvider>();
         success = await patientProvider.registerPatientUser(
-          username: _usernameController.text,
+          username: _usernameController.text.trim(),
           password: _passwordController.text,
           patientData: {
-            'name': _nameController.text,
-            'age': int.parse(_ageController.text),
-            'address': _addressController.text,
-            'phoneNumber': _phoneController.text,
+            'name': _nameController.text.trim(),
+            'age': int.tryParse(_ageController.text.trim()) ?? 0,
+            'address': _addressController.text.trim(),
+            'phoneNumber': _phoneController.text.trim(),
           },
         );
         error = patientProvider.error;
       } else {
         final auth = context.read<AuthProvider>();
         success = await auth.register(
-          username: _usernameController.text,
+          username: _usernameController.text.trim(),
           password: _passwordController.text,
           patientData: {
-            'name': _nameController.text,
-            'age': int.parse(_ageController.text),
-            'address': _addressController.text,
-            'phoneNumber': _phoneController.text,
+            'name': _nameController.text.trim(),
+            'age': int.tryParse(_ageController.text.trim()) ?? 0,
+            'address': _addressController.text.trim(),
+            'phoneNumber': _phoneController.text.trim(),
           },
         );
         error = auth.error;

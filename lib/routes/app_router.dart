@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../screens/login_screen.dart';
@@ -50,11 +51,15 @@ class AppRouter {
         GoRoute(
           path: '/patients/:id',
           builder: (context, state) {
-            final id = int.parse(state.pathParameters['id']!);
+            final idStr = state.pathParameters['id']!;
+            final id = int.tryParse(idStr);
+            if (id == null) {
+              return const Center(child: Text('Invalid Patient ID'));
+            }
             final tab = state.uri.queryParameters['tab'];
             return PatientDetailScreen(
               patientId: id,
-              initialTabIndex: tab != null ? int.tryParse(tab) : 0,
+              initialTabIndex: int.tryParse(tab ?? '') ?? 0,
             );
           },
         ),
