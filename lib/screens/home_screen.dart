@@ -144,13 +144,30 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: () => context.push('/patients'),
-            icon: const Icon(Icons.people),
-            label: const Text('View All Patients'),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => context.push('/patients/add'),
+                icon: const Icon(Icons.person_add),
+                label: const Text('Add Patient'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => context.push('/patients'),
+                icon: const Icon(Icons.people),
+                label: const Text('View All'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         _buildStatsCard(

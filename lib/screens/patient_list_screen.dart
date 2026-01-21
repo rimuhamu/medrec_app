@@ -74,7 +74,6 @@ void _showAppointmentDialog(BuildContext context, Patient patient) {
     try {
       final existingDate = DateTime.parse(patient.nextAppointment!);
       selectedDate = existingDate;
-      selectedTime = TimeOfDay.fromDateTime(existingDate);
     } catch (e) {
       debugPrint('Error parsing existing appointment: $e');
     }
@@ -146,7 +145,7 @@ void _showAppointmentDialog(BuildContext context, Patient patient) {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: selectedDate == null || selectedTime == null
+            onPressed: selectedDate == null
                 ? null
                 : () async {
                     final appointmentDateString =
