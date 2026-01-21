@@ -184,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildUserDashboard(AuthProvider auth, PatientProvider provider) {
-    final patient = auth.user?.patient;
+    final patient = provider.currentPatient ?? auth.user?.patient;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
