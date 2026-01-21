@@ -67,7 +67,6 @@ class PatientListScreen extends StatelessWidget {
 
 void _showAppointmentDialog(BuildContext context, Patient patient) {
   DateTime? selectedDate;
-  TimeOfDay? selectedTime;
 
   // Parse existing appointment if available
   if (patient.nextAppointment != null) {
