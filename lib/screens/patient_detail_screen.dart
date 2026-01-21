@@ -117,47 +117,80 @@ class _MedicationsTab extends StatelessWidget {
                     final med = provider.medications[index];
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          child: Icon(Icons.medication),
-                        ),
-                        title: Text(med.name ?? 'N/A'),
-                        subtitle: Column(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Dosage: ${med.dosage ?? 'N/A'}'),
-                            Text('Frequency: ${med.frequency ?? 'N/A'}'),
-                            Text('Duration: ${med.duration ?? 'N/A'}'),
-                          ],
-                        ),
-                        isThreeLine: true,
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              DateFormat('MMM d, y').format(med.createdAt),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
+                            const CircleAvatar(
+                              child: Icon(Icons.medication),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    med.name ?? 'N/A',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w500),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Dosage: ${med.dosage ?? 'N/A'}',
+                                    style: TextStyle(color: Colors.grey[700]),
+                                  ),
+                                  Text(
+                                    'Frequency: ${med.frequency ?? 'N/A'}',
+                                    style: TextStyle(color: Colors.grey[700]),
+                                  ),
+                                  Text(
+                                    'Duration: ${med.duration ?? 'N/A'}',
+                                    style: TextStyle(color: Colors.grey[700]),
+                                  ),
+                                ],
                               ),
                             ),
-                            if (isAdmin) ...[
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined, size: 20),
-                                padding: const EdgeInsets.only(left: 8),
-                                constraints: const BoxConstraints(),
-                                onPressed: () =>
-                                    _showEditMedicationDialog(context, med),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete,
-                                    color: Colors.red, size: 20),
-                                padding: const EdgeInsets.only(left: 8),
-                                constraints: const BoxConstraints(),
-                                onPressed: () =>
-                                    _deleteMedication(context, med.id),
-                              ),
-                            ],
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  DateFormat('MMM d, y').format(med.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                if (isAdmin) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.edit_outlined,
+                                            size: 20),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        onPressed: () =>
+                                            _showEditMedicationDialog(
+                                                context, med),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red, size: 20),
+                                        padding: EdgeInsets.zero,
+                                        constraints: const BoxConstraints(),
+                                        onPressed: () =>
+                                            _deleteMedication(context, med.id),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
                           ],
                         ),
                       ),
