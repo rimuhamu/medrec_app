@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/patient_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -37,46 +38,60 @@ class _PatientDetailScreenState extends State<PatientDetailScreen>
     final auth = context.watch<AuthProvider>();
     final isAdmin = auth.isAdmin;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Medical Records'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Medications', icon: Icon(Icons.medication)),
-            Tab(text: 'History', icon: Icon(Icons.history)),
-            Tab(text: 'Tests', icon: Icon(Icons.science)),
-          ],
-        ),
-      ),
-      body: Consumer<PatientProvider>(
-        builder: (context, provider, _) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          return TabBarView(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          context.go('/');
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go('/'),
+          ),
+          title: const Text('Medical Records'),
+          bottom: TabBar(
             controller: _tabController,
-            children: [
-              _MedicationsTab(
-                patientId: widget.patientId,
-                isAdmin: isAdmin,
-              ),
-              _MedicalHistoryTab(
-                patientId: widget.patientId,
-                isAdmin: isAdmin,
-              ),
-              _DiagnosticTestsTab(
-                patientId: widget.patientId,
-                isAdmin: isAdmin,
-              ),
+            tabs: const [
+              Tab(text: 'Medications', icon: Icon(Icons.medication)),
+              Tab(text: 'History', icon: Icon(Icons.history)),
+              Tab(text: 'Tests', icon: Icon(Icons.science)),
             ],
-          );
-        },
+          ),
+        ),
+        body: Consumer<PatientProvider>(
+          builder: (context, provider, _) {
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            return TabBarView(
+              controller: _tabController,
+              children: [
+                _MedicationsTab(
+                  patientId: widget.patientId,
+                  isAdmin: isAdmin,
+                ),
+                _MedicalHistoryTab(
+                  patientId: widget.patientId,
+                  isAdmin: isAdmin,
+                ),
+                _DiagnosticTestsTab(
+                  patientId: widget.patientId,
+                  isAdmin: isAdmin,
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
+
+// ... rest of the file remains the same (all the tab classes)
 
 class _MedicationsTab extends StatelessWidget {
   final int patientId;
