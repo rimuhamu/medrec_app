@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildWelcomeCard(auth),
+                  _buildWelcomeCard(auth, patientProvider),
                   const SizedBox(height: 24),
                   if (auth.isAdmin) ...[
                     _buildAdminDashboard(patientProvider),
@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWelcomeCard(AuthProvider auth) {
+  Widget _buildWelcomeCard(AuthProvider auth, PatientProvider patientProvider) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -109,7 +109,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     auth.isAdmin
                         ? auth.user?.username ?? ''
-                        : auth.user?.patient?.name ?? '',
+                        : auth.user?.patient?.name ??
+                            patientProvider.currentPatient?.name ??
+                            '',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),

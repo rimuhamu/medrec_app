@@ -17,7 +17,10 @@ class PatientProvider extends ChangeNotifier {
 
   PatientProvider(this._apiService);
 
+  Patient? _currentPatient;
+
   List<Patient> get patients => _patients;
+  Patient? get currentPatient => _currentPatient;
   List<Medication> get medications => _medications;
   List<MedicalHistory> get medicalHistory => _medicalHistory;
   List<DiagnosticTestResult> get diagnosticTests => _diagnosticTests;
@@ -55,14 +58,16 @@ class PatientProvider extends ChangeNotifier {
 
     try {
       final results = await Future.wait([
+        _apiService.getPatient(patientId),
         _apiService.getMedications(patientId),
         _apiService.getMedicalHistory(patientId),
         _apiService.getDiagnosticTests(patientId),
       ]);
 
-      _medications = results[0] as List<Medication>;
-      _medicalHistory = results[1] as List<MedicalHistory>;
-      _diagnosticTests = results[2] as List<DiagnosticTestResult>;
+      _currentPatient = results[0] as Patient;
+      _medications = results[1] as List<Medication>;
+      _medicalHistory = results[2] as List<MedicalHistory>;
+      _diagnosticTests = results[3] as List<DiagnosticTestResult>;
 
       _isLoading = false;
       notifyListeners();
