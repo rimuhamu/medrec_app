@@ -141,16 +141,23 @@ class _MedicationsTab extends StatelessWidget {
                                 color: Colors.grey[600],
                               ),
                             ),
-                            if (isAdmin)
+                            if (isAdmin) ...[
                               IconButton(
-                                icon: const Icon(Icons.delete, size: 20),
+                                icon: const Icon(Icons.edit_outlined, size: 20),
                                 padding: const EdgeInsets.only(left: 8),
                                 constraints: const BoxConstraints(),
-                                onPressed: () => _deleteMedication(
-                                  context,
-                                  med.id,
-                                ),
+                                onPressed: () =>
+                                    _showEditMedicationDialog(context, med),
                               ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red, size: 20),
+                                padding: const EdgeInsets.only(left: 8),
+                                constraints: const BoxConstraints(),
+                                onPressed: () =>
+                                    _deleteMedication(context, med.id),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -168,63 +175,162 @@ class _MedicationsTab extends StatelessWidget {
     final frequencyController = TextEditingController();
     final durationController = TextEditingController();
 
-    showDialog(
+    _showMedicationBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Medication'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-              ),
-              TextField(
-                controller: dosageController,
-                decoration: const InputDecoration(labelText: 'Dosage'),
-              ),
-              TextField(
-                controller: frequencyController,
-                decoration: const InputDecoration(labelText: 'Frequency'),
-              ),
-              TextField(
-                controller: durationController,
-                decoration: const InputDecoration(labelText: 'Duration'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final provider = context.read<PatientProvider>();
-              final success = await provider.addMedication(patientId, {
-                'name': nameController.text,
-                'dosage': dosageController.text,
-                'frequency': frequencyController.text,
-                'duration': durationController.text,
-              });
+      title: 'Add Medication',
+      submitText: 'Add',
+      nameController: nameController,
+      dosageController: dosageController,
+      frequencyController: frequencyController,
+      durationController: durationController,
+      onSubmit: () async {
+        final provider = context.read<PatientProvider>();
+        final success = await provider.addMedication(patientId, {
+          'name': nameController.text,
+          'dosage': dosageController.text,
+          'frequency': frequencyController.text,
+          'duration': durationController.text,
+        });
 
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success
-                        ? 'Medication added'
-                        : 'Failed to add medication'),
-                    backgroundColor: success ? Colors.green : Colors.red,
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  success ? 'Medication added' : 'Failed to add medication'),
+              backgroundColor: success ? Colors.green : Colors.red,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  void _showEditMedicationDialog(BuildContext context, dynamic med) {
+    final nameController = TextEditingController(text: med.name);
+    final dosageController = TextEditingController(text: med.dosage);
+    final frequencyController = TextEditingController(text: med.frequency);
+    final durationController = TextEditingController(text: med.duration);
+
+    _showMedicationBottomSheet(
+      context: context,
+      title: 'Edit Medication',
+      submitText: 'Save',
+      nameController: nameController,
+      dosageController: dosageController,
+      frequencyController: frequencyController,
+      durationController: durationController,
+      onSubmit: () async {
+        final provider = context.read<PatientProvider>();
+        final success = await provider.updateMedication(patientId, med.id, {
+          'name': nameController.text,
+          'dosage': dosageController.text,
+          'frequency': frequencyController.text,
+          'duration': durationController.text,
+        });
+
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(success
+                  ? 'Medication updated'
+                  : 'Failed to update medication'),
+              backgroundColor: success ? Colors.green : Colors.red,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  void _showMedicationBottomSheet({
+    required BuildContext context,
+    required String title,
+    required String submitText,
+    required TextEditingController nameController,
+    required TextEditingController dosageController,
+    required TextEditingController frequencyController,
+    required TextEditingController durationController,
+    required VoidCallback onSubmit,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
                   ),
-                );
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: onSubmit,
+                    child: Text(submitText),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(20),
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Name'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: dosageController,
+                    decoration: const InputDecoration(labelText: 'Dosage'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: frequencyController,
+                    decoration: const InputDecoration(labelText: 'Frequency'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: durationController,
+                    decoration: const InputDecoration(labelText: 'Duration'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -377,6 +483,13 @@ class _MedicalHistoryTab extends StatelessWidget {
                                         context, history),
                                     tooltip: 'Edit Medical History',
                                   ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  onPressed: () => _deleteMedicalHistory(
+                                      context, history.id),
+                                  tooltip: 'Delete Medical History',
+                                ),
                               ],
                             ),
                           ),
@@ -538,71 +651,128 @@ class _MedicalHistoryTab extends StatelessWidget {
     final surgeriesController = TextEditingController();
     final treatmentsController = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Medical History'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: conditionsController,
-                decoration:
-                    const InputDecoration(labelText: 'Medical Conditions'),
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
               ),
-              TextField(
-                controller: allergiesController,
-                decoration: const InputDecoration(
-                    labelText: 'Allergies (comma-separated)'),
-              ),
-              TextField(
-                controller: surgeriesController,
-                decoration: const InputDecoration(labelText: 'Surgeries'),
-              ),
-              TextField(
-                controller: treatmentsController,
-                decoration: const InputDecoration(labelText: 'Treatments'),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final provider = context.read<PatientProvider>();
-              final allergies = allergiesController.text
-                  .split(',')
-                  .map((e) => e.trim())
-                  .where((e) => e.isNotEmpty)
-                  .toList();
-
-              final success = await provider.addMedicalHistory(patientId, {
-                'medicalConditions': conditionsController.text,
-                'allergies': allergies,
-                'surgeries': surgeriesController.text,
-                'treatments': treatmentsController.text,
-              });
-
-              if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success
-                        ? 'Medical history added'
-                        : 'Failed to add medical history'),
-                    backgroundColor: success ? Colors.green : Colors.red,
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
                   ),
-                );
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
+                  const Text(
+                    'Add Medical History',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: () async {
+                      final provider = context.read<PatientProvider>();
+                      final allergies = allergiesController.text
+                          .split(',')
+                          .map((e) => e.trim())
+                          .where((e) => e.isNotEmpty)
+                          .toList();
+
+                      final success =
+                          await provider.addMedicalHistory(patientId, {
+                        'medicalConditions': conditionsController.text,
+                        'allergies': allergies,
+                        'surgeries': surgeriesController.text,
+                        'treatments': treatmentsController.text,
+                      });
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(success
+                                ? 'Medical history added'
+                                : 'Failed to add medical history'),
+                            backgroundColor:
+                                success ? Colors.green : Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            // Form content
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(20),
+                children: [
+                  _buildFormField(
+                    controller: conditionsController,
+                    label: 'Medical Conditions',
+                    icon: Icons.medical_information,
+                    hint: 'e.g., Type 2 Diabetes, Hypertension',
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: allergiesController,
+                    label: 'Allergies',
+                    icon: Icons.warning_amber_rounded,
+                    hint: 'Separate multiple allergies with commas',
+                    helperText: 'e.g., Penicillin, Shellfish, Peanuts',
+                    maxLines: 2,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: surgeriesController,
+                    label: 'Surgeries',
+                    icon: Icons.local_hospital,
+                    hint: 'Previous surgical procedures',
+                    helperText: 'Include dates if known',
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildFormField(
+                    controller: treatmentsController,
+                    label: 'Treatments',
+                    icon: Icons.healing,
+                    hint: 'Current or ongoing treatments',
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -780,6 +950,44 @@ class _MedicalHistoryTab extends StatelessWidget {
       ],
     );
   }
+
+  void _deleteMedicalHistory(BuildContext context, int historyId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Medical History'),
+        content:
+            const Text('Are you sure you want to delete this medical record?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final provider = context.read<PatientProvider>();
+              final success =
+                  await provider.deleteMedicalHistory(patientId, historyId);
+
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(success
+                        ? 'Medical record deleted'
+                        : 'Failed to delete medical record'),
+                    backgroundColor: success ? Colors.green : Colors.red,
+                  ),
+                );
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DiagnosticTestsTab extends StatelessWidget {
@@ -839,6 +1047,23 @@ class _DiagnosticTestsTab extends StatelessWidget {
                                     color: Colors.grey[600],
                                   ),
                                 ),
+                                if (isAdmin)
+                                  IconButton(
+                                    icon: const Icon(Icons.edit_outlined,
+                                        size: 20),
+                                    padding: const EdgeInsets.only(left: 8),
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () =>
+                                        _showEditTestDialog(context, test),
+                                  ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      size: 20, color: Colors.red),
+                                  padding: const EdgeInsets.only(left: 8),
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () =>
+                                      _deleteDiagnosticTest(context, test.id),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -858,24 +1083,153 @@ class _DiagnosticTestsTab extends StatelessWidget {
     final titleController = TextEditingController();
     final resultController = TextEditingController();
 
-    showDialog(
+    _showTestBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Test Result'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: 'Test Title'),
+      title: 'Add Test Result',
+      submitText: 'Add',
+      titleController: titleController,
+      resultController: resultController,
+      onSubmit: () async {
+        final provider = context.read<PatientProvider>();
+        final success = await provider.addDiagnosticTest(patientId, {
+          'title': titleController.text,
+          'result': resultController.text,
+        });
+
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  success ? 'Test result added' : 'Failed to add test result'),
+              backgroundColor: success ? Colors.green : Colors.red,
             ),
-            TextField(
-              controller: resultController,
-              decoration: const InputDecoration(labelText: 'Result'),
-              maxLines: 3,
+          );
+        }
+      },
+    );
+  }
+
+  void _showEditTestDialog(BuildContext context, dynamic test) {
+    final titleController = TextEditingController(text: test.title);
+    final resultController = TextEditingController(text: test.result);
+
+    _showTestBottomSheet(
+      context: context,
+      title: 'Edit Test Result',
+      submitText: 'Save',
+      titleController: titleController,
+      resultController: resultController,
+      onSubmit: () async {
+        final provider = context.read<PatientProvider>();
+        final success =
+            await provider.updateDiagnosticTest(patientId, test.id, {
+          'title': titleController.text,
+          'result': resultController.text,
+        });
+
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(success
+                  ? 'Test result updated'
+                  : 'Failed to update test result'),
+              backgroundColor: success ? Colors.green : Colors.red,
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  void _showTestBottomSheet({
+    required BuildContext context,
+    required String title,
+    required String submitText,
+    required TextEditingController titleController,
+    required TextEditingController resultController,
+    required VoidCallback onSubmit,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  FilledButton(
+                    onPressed: onSubmit,
+                    child: Text(submitText),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(20),
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(labelText: 'Test Title'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: resultController,
+                    decoration: const InputDecoration(labelText: 'Result'),
+                    maxLines: 5,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _deleteDiagnosticTest(BuildContext context, int testId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Test Result'),
+        content:
+            const Text('Are you sure you want to delete this test result?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -884,24 +1238,23 @@ class _DiagnosticTestsTab extends StatelessWidget {
           FilledButton(
             onPressed: () async {
               final provider = context.read<PatientProvider>();
-              final success = await provider.addDiagnosticTest(patientId, {
-                'title': titleController.text,
-                'result': resultController.text,
-              });
+              final success =
+                  await provider.deleteDiagnosticTest(patientId, testId);
 
               if (context.mounted) {
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(success
-                        ? 'Test result added'
-                        : 'Failed to add test result'),
+                        ? 'Test result deleted'
+                        : 'Failed to delete test result'),
                     backgroundColor: success ? Colors.green : Colors.red,
                   ),
                 );
               }
             },
-            child: const Text('Add'),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete'),
           ),
         ],
       ),
