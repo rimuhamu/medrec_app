@@ -5,8 +5,33 @@ import 'package:intl/intl.dart';
 import '../providers/patient_provider.dart';
 import '../models/models.dart';
 
-class PatientListScreen extends StatelessWidget {
+class PatientListScreen extends StatefulWidget {
   const PatientListScreen({super.key});
+
+  @override
+  State<PatientListScreen> createState() => _PatientListScreenState();
+}
+
+class _PatientListScreenState extends State<PatientListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Patient> _filterPatients(List<Patient> patients) {
+    if (_searchQuery.isEmpty) {
+      return patients;
+    }
+
+    final query = _searchQuery.toLowerCase();
+    return patients.where((patient) {
+      return patient.name.toLowerCase().contains(query);
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,40 +49,116 @@ class PatientListScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (provider.patients.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 80,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No patients found',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
+          final filteredPatients = _filterPatients(provider.patients);
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: provider.patients.length,
-            itemBuilder: (context, index) {
-              final patient = provider.patients[index];
-              return _PatientCard(
-                patient: patient,
-                onTap: () => context.push('/patients/${patient.id}'),
-                onAppointment: () => _showAppointmentDialog(context, patient),
-              );
-            },
+          return Column(
+            children: [
+              // Search Bar
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Search by patient name...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                ),
+              ),
+
+              // Results count
+              if (_searchQuery.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Text(
+                        '${filteredPatients.length} result${filteredPatients.length != 1 ? 's' : ''} found',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 8),
+
+              // Patient List
+              Expanded(
+                child: filteredPatients.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _searchQuery.isNotEmpty
+                                  ? Icons.search_off
+                                  : Icons.people_outline,
+                              size: 80,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _searchQuery.isNotEmpty
+                                  ? 'No patients found'
+                                  : 'No patients available',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            if (_searchQuery.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'Try a different name',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filteredPatients.length,
+                        itemBuilder: (context, index) {
+                          final patient = filteredPatients[index];
+                          return _PatientCard(
+                            patient: patient,
+                            searchQuery: _searchQuery,
+                            onTap: () =>
+                                context.push('/patients/${patient.id}'),
+                            onAppointment: () =>
+                                _showAppointmentDialog(context, patient),
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -68,7 +169,6 @@ class PatientListScreen extends StatelessWidget {
 void _showAppointmentDialog(BuildContext context, Patient patient) {
   DateTime? selectedDate;
 
-  // Parse existing appointment if available
   if (patient.nextAppointment != null) {
     try {
       final existingDate = DateTime.parse(patient.nextAppointment!);
@@ -171,7 +271,6 @@ void _showAppointmentDialog(BuildContext context, Patient patient) {
                       );
 
                       if (success) {
-                        // Reload the patients list
                         await provider.loadPatients();
                       }
                     }
@@ -186,14 +285,44 @@ void _showAppointmentDialog(BuildContext context, Patient patient) {
 
 class _PatientCard extends StatelessWidget {
   final Patient patient;
+  final String searchQuery;
   final VoidCallback onTap;
   final VoidCallback onAppointment;
 
   const _PatientCard({
     required this.patient,
+    required this.searchQuery,
     required this.onTap,
     required this.onAppointment,
   });
+
+  TextSpan _highlightMatch(String text, String query) {
+    if (query.isEmpty) {
+      return TextSpan(text: text);
+    }
+
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final index = lowerText.indexOf(lowerQuery);
+
+    if (index == -1) {
+      return TextSpan(text: text);
+    }
+
+    return TextSpan(
+      children: [
+        TextSpan(text: text.substring(0, index)),
+        TextSpan(
+          text: text.substring(index, index + query.length),
+          style: const TextStyle(
+            backgroundColor: Colors.yellow,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        TextSpan(text: text.substring(index + query.length)),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -227,12 +356,16 @@ class _PatientCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          patient.name,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                        RichText(
+                          text: TextSpan(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                            children: [
+                              _highlightMatch(patient.name, searchQuery),
+                            ],
+                          ),
                         ),
                         Text(
                           '${patient.age} years old',
