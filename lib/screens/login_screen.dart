@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/widgets.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,7 +15,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -34,12 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (success && mounted) {
         context.push('/');
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(auth.error ?? 'Login failed'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackBar.showError(context, auth.error ?? 'Login failed');
       }
     }
   }
@@ -56,76 +51,9 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.medical_services_rounded,
-                    size: 80,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'MedRec',
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Medical Records Management',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
+                  _buildLogo(),
                   const SizedBox(height: 48),
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username',
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                    validator: (val) =>
-                        val?.isEmpty ?? true ? 'Please enter username' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword
-                            ? Icons.visibility
-                            : Icons.visibility_off),
-                        onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword),
-                      ),
-                    ),
-                    validator: (val) =>
-                        val?.isEmpty ?? true ? 'Please enter password' : null,
-                  ),
-                  const SizedBox(height: 32),
-                  Consumer<AuthProvider>(
-                    builder: (context, auth, _) {
-                      return SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: FilledButton(
-                          onPressed: auth.isLoading ? null : _handleLogin,
-                          child: auth.isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Text('Login'),
-                        ),
-                      );
-                    },
-                  ),
+                  _buildLoginForm(),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => context.go('/register'),
@@ -137,6 +65,63 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLogo() {
+    return Column(
+      children: [
+        Icon(
+          Icons.medical_services_rounded,
+          size: 80,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'MedRec',
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Medical Records Management',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+              ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginForm() {
+    return Column(
+      children: [
+        AppTextField(
+          controller: _usernameController,
+          labelText: 'Username',
+          prefixIcon: Icons.person,
+          validator: (val) =>
+              val?.isEmpty ?? true ? 'Please enter username' : null,
+        ),
+        const SizedBox(height: 16),
+        PasswordTextField(
+          controller: _passwordController,
+          validator: (val) =>
+              val?.isEmpty ?? true ? 'Please enter password' : null,
+        ),
+        const SizedBox(height: 32),
+        Consumer<AuthProvider>(
+          builder: (context, auth, _) {
+            return LoadingButton(
+              onPressed: _handleLogin,
+              isLoading: auth.isLoading,
+              label: 'Login',
+            );
+          },
+        ),
+      ],
     );
   }
 }

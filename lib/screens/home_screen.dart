@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../providers/patient_provider.dart';
-import 'package:intl/intl.dart';
-import '../models/models.dart';
+import '../widgets/widgets.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -44,8 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
+              final router = GoRouter.of(context);
               await context.read<AuthProvider>().logout();
-              if (mounted) context.go('/login');
+              if (mounted) router.go('/login');
             },
           ),
         ],
@@ -53,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Consumer2<AuthProvider, PatientProvider>(
         builder: (context, auth, patientProvider, _) {
           if (patientProvider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingIndicator(message: 'Loading data...');
           }
 
           return RefreshIndicator(
@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildWelcomeCard(auth, patientProvider),
+                  _buildWelcomeSection(auth, patientProvider),
                   const SizedBox(height: 24),
                   if (auth.isAdmin) ...[
                     _buildAdminDashboard(patientProvider),
@@ -80,58 +80,17 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWelcomeCard(AuthProvider auth, PatientProvider patientProvider) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              child: Icon(
-                auth.isAdmin ? Icons.admin_panel_settings : Icons.person,
-                size: 30,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Welcome back,',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
-                  Text(
-                    auth.isAdmin
-                        ? auth.user?.username ?? ''
-                        : auth.user?.patient?.name ??
-                            patientProvider.currentPatient?.name ??
-                            '',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  Chip(
-                    label: Text(
-                      auth.isAdmin ? 'Administrator' : 'Patient',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    backgroundColor:
-                        auth.isAdmin ? Colors.purple[100] : Colors.blue[100],
-                    labelPadding: const EdgeInsets.symmetric(horizontal: 8),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildWelcomeSection(
+      AuthProvider auth, PatientProvider patientProvider) {
+    final name = auth.isAdmin
+        ? auth.user?.username ?? ''
+        : auth.user?.patient?.name ??
+            patientProvider.currentPatient?.name ??
+            '';
+
+    return WelcomeCard(
+      name: name,
+      isAdmin: auth.isAdmin,
     );
   }
 
@@ -139,18 +98,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'All Patients',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
+        const SectionHeader(title: 'All Patients'),
         const SizedBox(height: 16),
-        _buildStatsCard(
-          'Total Patients',
-          provider.patients.length.toString(),
-          Icons.people,
-          Colors.blue,
+        StatsCard(
+          title: 'Total Patients',
+          value: provider.patients.length.toString(),
+          icon: Icons.people,
+          color: Colors.blue,
           onTap: () => context.push('/patients'),
         ),
         const SizedBox(height: 16),
@@ -189,46 +143,44 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (patient?.nextAppointment != null)
-          _buildAppointmentReminderCard(patient!),
-        if (patient?.nextAppointment != null) const SizedBox(height: 16),
-        Text(
-          'My Medical Records',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-        ),
+        if (patient?.nextAppointment != null) ...[
+          AppointmentCard(
+            appointmentDate: DateTime.parse(patient!.nextAppointment!),
+          ),
+          const SizedBox(height: 16),
+        ],
+        const SectionHeader(title: 'My Medical Records'),
         const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
-              child: _buildStatsCard(
-                'Medications',
-                provider.medications.length.toString(),
-                Icons.medication,
-                Colors.green,
+              child: StatsCard(
+                title: 'Medications',
+                value: provider.medications.length.toString(),
+                icon: Icons.medication,
+                color: Colors.green,
                 onTap: () =>
                     context.push('/patients/${auth.user!.patientId}?tab=0'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatsCard(
-                'History',
-                provider.medicalHistory.length.toString(),
-                Icons.history,
-                Colors.blue,
+              child: StatsCard(
+                title: 'History',
+                value: provider.medicalHistory.length.toString(),
+                icon: Icons.history,
+                color: Colors.blue,
                 onTap: () =>
                     context.push('/patients/${auth.user!.patientId}?tab=1'),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatsCard(
-                'Test Results',
-                provider.diagnosticTests.length.toString(),
-                Icons.science,
-                Colors.orange,
+              child: StatsCard(
+                title: 'Test Results',
+                value: provider.diagnosticTests.length.toString(),
+                icon: Icons.science,
+                color: Colors.orange,
                 onTap: () =>
                     context.push('/patients/${auth.user!.patientId}?tab=2'),
               ),
@@ -247,127 +199,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildAppointmentReminderCard(Patient patient) {
-    final appointmentDate = DateTime.parse(patient.nextAppointment!);
-    final now = DateTime.now();
-    final daysUntil = appointmentDate.difference(now).inDays;
-
-    const cardColor = Colors.teal;
-    IconData icon;
-    String message;
-
-    if (daysUntil < 0) {
-      icon = Icons.event_busy;
-      message = 'Past appointment';
-    } else if (daysUntil == 0) {
-      icon = Icons.event_available;
-      message = 'Today!';
-    } else if (daysUntil == 1) {
-      icon = Icons.event;
-      message = 'Tomorrow';
-    } else if (daysUntil <= 7) {
-      icon = Icons.event;
-      message = 'In $daysUntil days';
-    } else {
-      icon = Icons.event;
-      message = 'In $daysUntil days';
-    }
-
-    return Card(
-      color: cardColor.withValues(alpha: 0.1),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: cardColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: cardColor, size: 32),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Next Appointment',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('EEEE, d MMMM y').format(appointmentDate),
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: cardColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      message,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsCard(String title, String value, IconData icon, Color color,
-      {VoidCallback? onTap}) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(icon, size: 32, color: color),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                    ),
-              ),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodySmall,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

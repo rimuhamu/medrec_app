@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../services/notification_service.dart';
+import '../widgets/widgets.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -41,35 +42,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Test notification sent!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      AppSnackBar.showSuccess(context, 'Test notification sent!');
     }
   }
 
   Future<void> _cancelAllNotifications() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await ConfirmDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel All Notifications'),
-        content: const Text(
-          'Are you sure you want to cancel all scheduled notifications?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('No'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
+      title: 'Cancel All Notifications',
+      message: 'Are you sure you want to cancel all scheduled notifications?',
+      confirmLabel: 'Yes',
+      cancelLabel: 'No',
+      isDangerous: true,
     );
 
     if (confirm == true) {
@@ -77,13 +61,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await _loadPendingNotifications();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('All notifications cancelled'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        AppSnackBar.showInfo(context, 'All notifications cancelled');
       }
+    }
+  }
+
+  Future<void> _cancelNotification(int id) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await _notificationService.cancelNotification(id);
+    await _loadPendingNotifications();
+
+    if (mounted) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Notification cancelled')),
+      );
     }
   }
 
@@ -100,146 +91,138 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoadingIndicator(message: 'Loading notifications...')
           : Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.notifications_active),
-                          title: const Text('Scheduled Notifications'),
-                          subtitle:
-                              Text('${_pendingNotifications.length} pending'),
-                          trailing: const Icon(Icons.chevron_right),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _testNotification,
-                              icon: const Icon(Icons.send),
-                              label: const Text('Test Notification'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: _pendingNotifications.isEmpty
-                                  ? null
-                                  : _cancelAllNotifications,
-                              icon: const Icon(Icons.clear_all),
-                              label: const Text('Cancel All'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.red,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                _buildHeader(),
                 const Divider(),
-                Expanded(
-                  child: _pendingNotifications.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.notifications_off,
-                                size: 80,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No pending notifications',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Appointment reminders will appear here',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _pendingNotifications.length,
-                          itemBuilder: (itemContext, index) {
-                            final notification = _pendingNotifications[index];
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  backgroundColor: Theme.of(itemContext)
-                                      .colorScheme
-                                      .primaryContainer,
-                                  child: Icon(
-                                    Icons.notifications,
-                                    color: Theme.of(itemContext)
-                                        .colorScheme
-                                        .primary,
-                                  ),
-                                ),
-                                title: Text(
-                                  notification.title ?? 'Notification',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 4),
-                                    Text(notification.body ?? ''),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'ID: ${notification.id}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.cancel),
-                                  onPressed: () async {
-                                    await _notificationService
-                                        .cancelNotification(notification.id);
-                                    await _loadPendingNotifications();
-
-                                    if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content:
-                                              Text('Notification cancelled'),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
+                Expanded(child: _buildNotificationsList()),
               ],
             ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildStatusCard(),
+          const SizedBox(height: 8),
+          _buildActionButtons(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusCard() {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.notifications_active),
+        title: const Text('Scheduled Notifications'),
+        subtitle: Text('${_pendingNotifications.length} pending'),
+        trailing: const Icon(Icons.chevron_right),
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: _testNotification,
+            icon: const Icon(Icons.send),
+            label: const Text('Test Notification'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: FilledButton.icon(
+            onPressed:
+                _pendingNotifications.isEmpty ? null : _cancelAllNotifications,
+            icon: const Icon(Icons.clear_all),
+            label: const Text('Cancel All'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNotificationsList() {
+    if (_pendingNotifications.isEmpty) {
+      return const EmptyState(
+        icon: Icons.notifications_off,
+        title: 'No pending notifications',
+        subtitle: 'Appointment reminders will appear here',
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _pendingNotifications.length,
+      itemBuilder: (context, index) {
+        final notification = _pendingNotifications[index];
+        return NotificationCard(
+          notification: notification,
+          onCancel: () => _cancelNotification(notification.id),
+        );
+      },
+    );
+  }
+}
+
+/// A card displaying a pending notification.
+class NotificationCard extends StatelessWidget {
+  final PendingNotificationRequest notification;
+  final VoidCallback? onCancel;
+
+  const NotificationCard({
+    super.key,
+    required this.notification,
+    this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+          child: Icon(
+            Icons.notifications,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        title: Text(
+          notification.title ?? 'Notification',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(notification.body ?? ''),
+            const SizedBox(height: 4),
+            Text(
+              'ID: ${notification.id}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.cancel),
+          onPressed: onCancel,
+          tooltip: 'Cancel notification',
+        ),
+      ),
     );
   }
 }
