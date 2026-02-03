@@ -1733,17 +1733,56 @@ class _TestExplanationSheetState extends State<_TestExplanationSheet> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(
+                _buildFormattedText(
                   explanation.explanation.isNotEmpty
                       ? explanation.explanation
                       : 'No explanation available',
-                  style: const TextStyle(fontSize: 15, height: 1.5),
+                  const TextStyle(fontSize: 15, height: 1.5),
                 ),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  /// Parses markdown-style bold text (**text**) and returns a RichText widget.
+  Widget _buildFormattedText(String text, TextStyle baseStyle) {
+    final boldPattern = RegExp(r'\*\*(.+?)\*\*');
+    final spans = <TextSpan>[];
+    int lastEnd = 0;
+
+    for (final match in boldPattern.allMatches(text)) {
+      // Add text before the match
+      if (match.start > lastEnd) {
+        spans.add(TextSpan(text: text.substring(lastEnd, match.start)));
+      }
+      // Add bold text
+      spans.add(TextSpan(
+        text: match.group(1),
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ));
+      lastEnd = match.end;
+    }
+
+    // Add remaining text after last match
+    if (lastEnd < text.length) {
+      spans.add(TextSpan(text: text.substring(lastEnd)));
+    }
+
+    // If no matches found, return plain text
+    if (spans.isEmpty) {
+      spans.add(TextSpan(text: text));
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: baseStyle.copyWith(
+          color: baseStyle.color ?? Colors.black87,
+        ),
+        children: spans,
+      ),
     );
   }
 }
