@@ -289,4 +289,27 @@ class ApiService {
       throw Exception(_handleError(e));
     }
   }
+
+  // AI-Powered Features
+
+  Future<MedicationScheduleResponse> getMedicationSchedule(
+      int patientId) async {
+    try {
+      final res = await _dio.get('/patients/$patientId/medications/schedule');
+      return MedicationScheduleResponse.fromJson(res.data);
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
+
+  Future<TestExplanation> getDiagnosticTestExplanation(
+      int patientId, int testId) async {
+    try {
+      final res = await _dio
+          .get('/patients/$patientId/diagnostic-test-results/$testId/explain');
+      return TestExplanation.fromJson(res.data);
+    } on DioException catch (e) {
+      throw Exception(_handleError(e));
+    }
+  }
 }

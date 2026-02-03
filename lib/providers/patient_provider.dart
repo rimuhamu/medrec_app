@@ -295,4 +295,28 @@ class PatientProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  // AI-Powered Features
+
+  Future<MedicationScheduleResponse?> getMedicationSchedule(
+      int patientId) async {
+    try {
+      return await _apiService.getMedicationSchedule(patientId);
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<TestExplanation?> getDiagnosticTestExplanation(
+      int patientId, int testId) async {
+    try {
+      return await _apiService.getDiagnosticTestExplanation(patientId, testId);
+    } catch (e) {
+      _error = e.toString().replaceAll('Exception: ', '');
+      notifyListeners();
+      return null;
+    }
+  }
 }
