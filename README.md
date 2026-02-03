@@ -6,6 +6,7 @@ A Flutter application for managing medical records, designed for both administra
 
 <p align="center">
   <img src="assets/screenshots/med_collage.png" width="100%" alt="MedRec App Overview" />
+  <img src="assets/screenshots/AI_explanation.png" width="33%" alt="AI Explanation Sheet" />
 </p>
 
 ## 📋 Features
