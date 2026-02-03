@@ -111,6 +111,7 @@ class _MedicationsTab extends StatelessWidget {
     return Column(
       children: [
         if (isAdmin) _buildAddButton(context),
+        if (provider.medications.isNotEmpty) _buildScheduleButton(context),
         Expanded(
           child: provider.medications.isEmpty
               ? const EmptyState(
@@ -135,6 +136,33 @@ class _MedicationsTab extends StatelessWidget {
           label: const Text('Add Medication'),
         ),
       ),
+    );
+  }
+
+  Widget _buildScheduleButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () => _showScheduleSheet(context),
+          icon: const Icon(Icons.schedule),
+          label: const Text('View AI Schedule'),
+        ),
+      ),
+    );
+  }
+
+  void _showScheduleSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => _MedicationScheduleSheet(patientId: patientId),
     );
   }
 
@@ -469,6 +497,216 @@ class _MedicationFormSheet extends StatelessWidget {
             child: Text(submitLabel),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Bottom sheet for displaying AI-generated medication schedule.
+class _MedicationScheduleSheet extends StatefulWidget {
+  final int patientId;
+
+  const _MedicationScheduleSheet({required this.patientId});
+
+  @override
+  State<_MedicationScheduleSheet> createState() =>
+      _MedicationScheduleSheetState();
+}
+
+class _MedicationScheduleSheetState extends State<_MedicationScheduleSheet> {
+  bool _isLoading = true;
+  MedicationScheduleResponse? _schedule;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchedule();
+  }
+
+  Future<void> _loadSchedule() async {
+    final provider = context.read<PatientProvider>();
+    final result = await provider.getMedicationSchedule(widget.patientId);
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _schedule = result;
+        _error = result == null ? 'Failed to generate schedule' : null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        children: [
+          _buildHandle(),
+          _buildHeader(context),
+          const Divider(),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Generating your medication schedule...'),
+                      ],
+                    ),
+                  )
+                : _error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline,
+                                size: 48, color: Colors.red),
+                            const SizedBox(height: 16),
+                            Text(_error!,
+                                style: const TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      )
+                    : _buildScheduleContent(scrollController),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHandle() {
+    return Container(
+      margin: const EdgeInsets.only(top: 12, bottom: 8),
+      width: 40,
+      height: 4,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          const Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'AI Schedule',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(width: 60), // Balance the layout
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleContent(ScrollController scrollController) {
+    final schedule = _schedule?.schedule ?? [];
+
+    if (schedule.isEmpty) {
+      return const Center(
+        child: Text('No schedule available'),
+      );
+    }
+
+    return ListView.builder(
+      controller: scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: schedule.length,
+      itemBuilder: (context, index) {
+        final item = schedule[index];
+        return _buildScheduleCard(item);
+      },
+    );
+  }
+
+  Widget _buildScheduleCard(ScheduleItem item) {
+    IconData icon;
+    Color color;
+
+    switch (item.timeOfDay.toLowerCase()) {
+      case 'morning':
+        icon = Icons.wb_sunny;
+        color = Colors.orange;
+        break;
+      case 'afternoon':
+        icon = Icons.wb_cloudy;
+        color = Colors.blue;
+        break;
+      case 'evening':
+        icon = Icons.nights_stay;
+        color = Colors.indigo;
+        break;
+      case 'night':
+        icon = Icons.bedtime;
+        color = Colors.purple;
+        break;
+      default:
+        icon = Icons.schedule;
+        color = Colors.teal;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: color),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  item.timeOfDay,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...item.medicines.map(
+              (med) => Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 8),
+                child: Row(
+                  children: [
+                    const Icon(Icons.medication, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(med)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -997,8 +1235,25 @@ class _DiagnosticTestsTab extends StatelessWidget {
           isAdmin: isAdmin,
           onEdit: () => _showEditTestDialog(context, test),
           onDelete: () => _deleteTest(context, test.id),
+          onExplain: () => _showExplanationSheet(context, test.id),
         );
       },
+    );
+  }
+
+  void _showExplanationSheet(BuildContext context, int testId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) => _TestExplanationSheet(
+        patientId: patientId,
+        testId: testId,
+      ),
     );
   }
 
@@ -1116,6 +1371,7 @@ class DiagnosticTestCard extends StatelessWidget {
   final bool isAdmin;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
+  final VoidCallback? onExplain;
 
   const DiagnosticTestCard({
     super.key,
@@ -1123,6 +1379,7 @@ class DiagnosticTestCard extends StatelessWidget {
     required this.isAdmin,
     this.onEdit,
     this.onDelete,
+    this.onExplain,
   });
 
   @override
@@ -1167,6 +1424,15 @@ class DiagnosticTestCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(test.result ?? 'No result'),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onExplain,
+                icon: const Icon(Icons.auto_awesome, size: 18),
+                label: const Text('Explain in Simple Terms'),
+              ),
+            ),
           ],
         ),
       ),
@@ -1255,6 +1521,229 @@ class _DiagnosticTestFormSheet extends StatelessWidget {
           FilledButton(onPressed: onSubmit, child: Text(submitLabel)),
         ],
       ),
+    );
+  }
+}
+
+/// Bottom sheet for displaying AI-generated test result explanation.
+class _TestExplanationSheet extends StatefulWidget {
+  final int patientId;
+  final int testId;
+
+  const _TestExplanationSheet({
+    required this.patientId,
+    required this.testId,
+  });
+
+  @override
+  State<_TestExplanationSheet> createState() => _TestExplanationSheetState();
+}
+
+class _TestExplanationSheetState extends State<_TestExplanationSheet> {
+  bool _isLoading = true;
+  TestExplanation? _explanation;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExplanation();
+  }
+
+  Future<void> _loadExplanation() async {
+    final provider = context.read<PatientProvider>();
+    final result = await provider.getDiagnosticTestExplanation(
+      widget.patientId,
+      widget.testId,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _explanation = result;
+        _error = result == null ? 'Failed to generate explanation' : null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) => Column(
+        children: [
+          _buildHandle(),
+          _buildHeader(context),
+          const Divider(),
+          Expanded(
+            child: _isLoading
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Generating explanation...'),
+                      ],
+                    ),
+                  )
+                : _error != null
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.error_outline,
+                                size: 48, color: Colors.red),
+                            const SizedBox(height: 16),
+                            Text(_error!,
+                                style: const TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      )
+                    : _buildExplanationContent(scrollController),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHandle() {
+    return Container(
+      margin: const EdgeInsets.only(top: 12, bottom: 8),
+      width: 40,
+      height: 4,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+          const Row(
+            children: [
+              Icon(Icons.auto_awesome, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'AI Explanation',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(width: 60), // Balance the layout
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExplanationContent(ScrollController scrollController) {
+    final explanation = _explanation;
+
+    if (explanation == null) {
+      return const Center(
+        child: Text('No explanation available'),
+      );
+    }
+
+    return ListView(
+      controller: scrollController,
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Original Result Section
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.science, color: Colors.blue),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Original Result',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  explanation.originalResult.isNotEmpty
+                      ? explanation.originalResult
+                      : 'No result data',
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Explanation Section
+        Card(
+          color: Theme.of(context)
+              .colorScheme
+              .primaryContainer
+              .withValues(alpha: 0.3),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.teal.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.lightbulb_outline,
+                          color: Colors.teal),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Simple Explanation',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  explanation.explanation.isNotEmpty
+                      ? explanation.explanation
+                      : 'No explanation available',
+                  style: const TextStyle(fontSize: 15, height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
