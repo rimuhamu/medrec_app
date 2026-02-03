@@ -12,3 +12,5 @@ export 'patient.dart';
 export 'medication.dart';
 export 'medical_history.dart';
 export 'diagnostic_test_result.dart';
+export 'medication_schedule.dart';
+export 'test_explanation.dart';
